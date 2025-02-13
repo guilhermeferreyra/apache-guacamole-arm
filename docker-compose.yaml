@@ -1,0 +1,44 @@
+services:
+  guacamole:
+    # build: ./guacd/
+    image: guilhermeferreyra/guacamole-server-arm
+    container_name: guacd
+    volumes:
+      - ./volumes/extensions:/etc/guacamole/extensions:ro
+      - ./volumes/lib:/etc/guacamole/lib:ro
+      - ./volumes/properties/guacamole.properties:/etc/guacamole/guacamole.properties:ro
+      # - ./volumes/properties/guacd.conf:/etc/guacamole/guacd.conf:ro ## not needed
+    ports:
+      - "4822:4822"
+    depends_on:
+      - mysql
+    restart: always
+
+  tomcat:
+    # image: arm64v8/tomcat:9-jdk11
+    image: guilhermeferreyra/guacamole-client-arm
+    container_name: tomcat
+    volumes:
+      - ./volumes/tomcat/guacamole-1.5.5.war:/usr/local/tomcat/webapps/guacamole.war
+      - ./volumes/extensions:/etc/guacamole/extensions:ro
+      - ./volumes/lib:/etc/guacamole/lib:ro
+      - ./volumes/properties/guacamole.properties:/etc/guacamole/guacamole.properties:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      - guacamole
+      - mysql
+    restart: always
+
+  mysql:
+    image: arm64v8/mysql:9
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: guacamole
+      MYSQL_DATABASE: guacamole_db
+      MYSQL_USER: guacamole
+      MYSQL_PASSWORD: guacamole
+    volumes:
+      - ./volumes/database:/var/lib/mysql
+      - ./volumes/schema:/schema
+    restart: always
